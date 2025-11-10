@@ -1,6 +1,8 @@
-# Kora - Personal Knowledge Organizer
+# Kora - Personal File Archive
 
-A command-line Ruby application for organizing personal knowledge with full-text search capabilities.
+A command-line Ruby application for personal file organization with full-text search capabilities.
+
+PLEASE NOTE: this is a vibe coded experimental project
 
 ## Features
 

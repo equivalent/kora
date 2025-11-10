@@ -1,4 +1,4 @@
-# Kora - Personal Knowledge Organizer
+# Kora - Personal File Archive
 # Cursor .mdc documentation file
 
 ## Project Overview
@@ -40,7 +40,7 @@ Kora is a sophisticated CLI (Command Line Interface) application built in Ruby 3
 
 ### Main Menu
 ```
-=== KORA - Personal Knowledge Organizer ===
+=== KORA - Personal File Archive ===
 1. Search Item          # Interactive search with filtering
 2. Find Item by Tag     # Browse and filter tags
 3. Create New Item      # Add new knowledge items

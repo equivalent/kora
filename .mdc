@@ -1,9 +1,9 @@
-# Kora - Personal Knowledge Organizer
+# Kora - Personal File Archive
 # Cursor .mdc documentation file
 
 ## Project Overview
 
-Kora is a sophisticated CLI (Command Line Interface) application built in Ruby 3.4 for personal knowledge organization. It provides a powerful system for storing, organizing, and retrieving documents with advanced search capabilities.
+Kora is a sophisticated CLI (Command Line Interface) application built in Ruby 3.4 for personal file organization. It provides a powerful system for storing, organizing, and retrieving documents with advanced search capabilities.
 
 **Key Technologies:**
 - Ruby 3.4 (vanilla syntax, no frameworks)
