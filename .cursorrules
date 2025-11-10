@@ -1,0 +1,276 @@
+# Kora - Personal Knowledge Organizer
+# Cursor .mdc documentation file
+
+## Project Overview
+
+Kora is a sophisticated CLI (Command Line Interface) application built in Ruby 3.4 for personal knowledge organization. It provides a powerful system for storing, organizing, and retrieving documents with advanced search capabilities.
+
+**Key Technologies:**
+- Ruby 3.4 (vanilla syntax, no frameworks)
+- SQLite 3 database
+- Unicode-aware text processing
+- File system integration
+
+## Core Features
+
+### 🗂️ Knowledge Organization
+- **Items**: Core knowledge units with names, descriptions, and associated files
+- **Tags**: Hierarchical categorization with case-insensitive uniqueness
+- **File Storage**: Automatic folder creation with organized naming conventions
+- **Metadata**: Creation/update timestamps for all content
+
+### 🔍 Advanced Search
+- **Interactive Filtering**: Real-time search as you type
+- **Diacritic-Insensitive**: "ziadost" finds "Žiadosť" automatically
+- **Multi-Field Search**: Searches across item names, descriptions, and tags
+- **Recent Items Priority**: Shows 50 most recent items initially
+
+### 🏷️ Tag Management
+- **Alphabetical Organization**: Tags sorted by normalized Unicode
+- **Interactive Tag Browsing**: Type to filter through available tags
+- **Tag-Based Item Discovery**: Find all items with specific tags
+- **Smart Tag Matching**: Diacritic-insensitive tag filtering
+
+### 📁 File Management
+- **Automatic Folder Creation**: `storage/YYYY-MM-DD_sanitized-name/`
+- **File Association**: Each item has its own dedicated folder
+- **Cross-Platform Paths**: Relative path storage for portability
+
+## Menu Structure
+
+### Main Menu
+```
+=== KORA - Personal Knowledge Organizer ===
+1. Search Item          # Interactive search with filtering
+2. Find Item by Tag     # Browse and filter tags
+3. Create New Item      # Add new knowledge items
+9. Exit
+```
+
+### Search Item (Option 1)
+- **Initial View**: Shows 50 most recent items
+- **Live Filtering**: Type any text to instantly filter results
+- **Diacritic Support**: "predprimarne" finds "predprimárne"
+- **Multi-Match**: Searches names, descriptions, and tags simultaneously
+- **Navigation**: Select by number, press Enter to clear filters, "back" to exit
+
+### Find Item by Tag (Option 2)
+- **Tag Browser**: Alphabetical list of all available tags
+- **Tag Filtering**: Type to narrow down tag options
+- **Unicode Aware**: Proper sorting with diacritic normalization
+- **Item Discovery**: Select tag to see all associated items
+- **Back Navigation**: Easy return to main menu
+
+### Create New Item (Option 3)
+- **Item Details**: Name, date (defaults to today), description
+- **Tag Selection**: Interactive tag picker with filtering
+- **Auto-Folder**: Automatic storage folder creation
+- **File Integration**: Opens folder for immediate file addition
+
+## Database Schema
+
+### Tables
+
+#### items
+```sql
+CREATE TABLE items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT,
+  path TEXT NOT NULL,           -- Relative path to storage folder
+  created_at DATE NOT NULL,
+  updated_at DATETIME NOT NULL
+);
+```
+
+#### tags
+```sql
+CREATE TABLE tags (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE COLLATE NOCASE
+);
+```
+
+#### taggings
+```sql
+CREATE TABLE taggings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tag_id INTEGER NOT NULL,
+  item_id INTEGER NOT NULL,
+  FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
+  FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
+  UNIQUE(tag_id, item_id)
+);
+```
+
+### Key Relationships
+- **Items have many Tags** through taggings (many-to-many)
+- **Tags have many Items** through taggings
+- **Cascading Deletes**: Removing items/tags cleans up relationships
+
+## File Structure
+
+```
+kora/
+├── main.rb              # Main application entry point
+├── kora.db             # SQLite database (ignored by git)
+├── storage/            # File storage (ignored by git)
+│   └── YYYY-MM-DD_name/
+├── README.md           # Project documentation
+├── Gemfile             # Ruby dependencies
+└── .gitignore         # Git ignore rules
+```
+
+## Code Architecture
+
+### Core Classes
+
+#### Database
+- Singleton pattern for database connection
+- Schema initialization and management
+- Connection pooling and error handling
+
+#### Item
+- CRUD operations for knowledge items
+- Tag association management
+- Folder creation and path handling
+- Search functionality with Unicode normalization
+
+#### Tag
+- Tag creation and management
+- Case-insensitive uniqueness
+- Association with items through taggings
+
+#### CLI
+- Interactive menu system
+- Input validation and error handling
+- Search and filtering interfaces
+- User experience optimization
+
+### Key Methods
+
+#### Search & Filtering
+```ruby
+# Interactive item search with live filtering
+def search_item
+
+# Tag-based item discovery
+def find_item_by_tag
+
+# Unicode-aware text normalization
+def normalize_diacritics
+```
+
+#### Data Management
+```ruby
+# Full CRUD for items
+def save, def destroy
+
+# Tag association management
+def update_tags
+
+# Folder creation with naming
+def create_folder
+```
+
+## Unicode & Internationalization
+
+### Diacritic Handling
+- **Unicode NFD Normalization**: Separates base characters from diacritics
+- **Combining Character Removal**: Strips accent marks for comparison
+- **NFC Recomposotion**: Returns to canonical Unicode form
+
+### Slovak Language Support
+- **Diacritic Examples**: Ž, Š, Č, Ť, Ľ, Ň, Ŕ, Ä, Ô
+- **Search Examples**:
+  - "ziadost" → "Žiadosť"
+  - "predprimarne" → "predprimárne"
+  - "dietaa" → "dieťaťa"
+
+### Sorting & Comparison
+- **Case-Insensitive**: Tag uniqueness ignores case
+- **Unicode-Aware**: Proper alphabetical sorting
+- **Normalization**: Consistent comparison across all text fields
+
+## Usage Patterns
+
+### Daily Workflow
+1. **Create Items**: Add new knowledge with tags and descriptions
+2. **Organize Files**: Store documents in auto-created folders
+3. **Search & Discover**: Use interactive search or tag browsing
+4. **Refine Organization**: Update tags and descriptions as needed
+
+### Search Strategies
+- **Keyword Search**: Type partial words for instant results
+- **Tag Navigation**: Browse by category for focused discovery
+- **Recent Items**: Start with latest additions
+- **Combined Approach**: Use both search and tags together
+
+## Development Guidelines
+
+### Code Style
+- **Ruby 3.4 Syntax**: Modern Ruby features and idioms
+- **Clean Methods**: Single responsibility principle
+- **Error Handling**: Graceful failure with user feedback
+- **Documentation**: Comprehensive inline comments
+
+### Database Best Practices
+- **Foreign Keys**: Referential integrity maintained
+- **Indexes**: Optimized for common query patterns
+- **Migrations**: Schema changes tracked and documented
+- **Backup Strategy**: Database file management
+
+### Testing Approach
+- **Interactive Testing**: CLI-driven manual testing
+- **Edge Cases**: Unicode, empty inputs, special characters
+- **Data Integrity**: Verify relationships and constraints
+- **Performance**: Large dataset handling
+
+## Future Enhancements
+
+### Potential Features
+- **Export Functionality**: JSON/XML export options
+- **Import Support**: Bulk data import capabilities
+- **Advanced Queries**: Date ranges, tag combinations
+- **File Type Detection**: Automatic file categorization
+- **Backup System**: Automated database backups
+
+### Technical Improvements
+- **Full-Text Search**: Re-implement with proper FTS5
+- **Web Interface**: Optional web-based access
+- **Plugin System**: Extensible architecture
+- **Multi-User Support**: User isolation and permissions
+
+## Installation & Setup
+
+### Prerequisites
+- Ruby 3.4+
+- SQLite3 system library
+
+### Quick Start
+```bash
+git clone <repository>
+cd kora
+bundle install
+ruby main.rb
+```
+
+### First Run
+- Database auto-creates on first launch
+- Storage directory auto-creates
+- No configuration required
+
+## Troubleshooting
+
+### Common Issues
+- **Database Errors**: Check file permissions on kora.db
+- **Unicode Display**: Ensure terminal supports UTF-8
+- **File Operations**: Verify storage directory permissions
+- **Memory Usage**: Large datasets may need optimization
+
+### Debug Mode
+- Enable verbose logging for database operations
+- Check SQLite query execution plans
+- Verify file system operations
+
+This comprehensive documentation covers all aspects of the Kora application built through our collaborative development process.

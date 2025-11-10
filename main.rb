@@ -236,7 +236,7 @@ class CLI
         find_item_by_tag
       when 3
         create_item
-      when 9
+      when 0
         @running = false
       else
         puts "Invalid option. Please try again."
@@ -247,41 +247,73 @@ class CLI
   private
 
   def show_main_menu
-    puts "\n=== KORA - Personal Knowledge Organizer ==="
+    puts "\nKORA - file archive"
     puts "1. Search Item"
     puts "2. Find Item by Tag"
     puts "3. Create New Item"
-    puts "9. Exit"
+    puts "0. Exit"
     print "Choose an option: "
   end
 
   def search_item
-    print "\nFind Keyword: "
-    keyword = gets.chomp
+    puts "\n=== Search Items ==="
+    puts "Showing 50 most recent items (type to filter, press number to select, 0 to go back):"
 
-    items = Item.search(keyword)
+    # Get all items for filtering
+    all_items = Item.all
 
-    if items.empty?
-      puts "No items found matching '#{keyword}'"
-      return
-    end
+    filter_text = ""
+    loop do
+      # Filter items based on current filter_text
+      filtered_items = if filter_text.empty?
+        # Show 50 most recent items initially
+        all_items.first(50)
+      else
+        # Filter by search term (supports partial and diacritic-insensitive matching)
+        normalized_filter = filter_text.normalize_diacritics.downcase
+        all_items.select do |item|
+          name_match = item.name.downcase.include?(filter_text.downcase) ||
+                       item.name.normalize_diacritics.downcase.include?(normalized_filter)
+          desc_match = item.description&.downcase&.include?(filter_text.downcase) ||
+                       item.description&.normalize_diacritics&.downcase&.include?(normalized_filter)
+          tag_match = item.tag_names.any? do |tag|
+            tag.downcase.include?(filter_text.downcase) ||
+            tag.normalize_diacritics.downcase.include?(normalized_filter)
+          end
 
-    puts "\nSearch Results:"
-    items.each_with_index do |item, index|
-      tags_str = item.tag_names.any? ? " [#{item.tag_names.join(', ')}]" : ""
-      puts "#{index + 1}. #{item.created_at} | #{item.name}#{tags_str}"
-    end
+          name_match || desc_match || tag_match
+        end.first(50) # Limit to 50 results
+      end
 
-    print "\nSelect item (number) or 0 to go back: "
-    choice = gets.chomp.to_i
+      if filtered_items.empty?
+        puts "\nNo items match '#{filter_text}'. Keep typing or press Enter to clear filter."
+      else
+        puts "\n#{filter_text.empty? ? 'Recent Items' : "Filtered Items (filter: '#{filter_text}')"}:"
+        filtered_items.each_with_index do |item, index|
+          tags_str = item.tag_names.any? ? " [#{item.tag_names.join(', ')}]" : ""
+          puts "#{index + 1}. #{item.created_at} | #{item.name}#{tags_str}"
+        end
+      end
 
-    return if choice == 0
+      print "\nType to filter or select (number/0 to go back): "
+      input = gets.chomp
 
-    if choice.between?(1, items.length)
-      selected_item = items[choice - 1]
-      show_item_menu(selected_item)
-    else
-      puts "Invalid selection."
+      if input == '0'
+        break
+      elsif input.empty?
+        filter_text = ""  # Clear filter to show recent items again
+      elsif input.match?(/^\d+$/)
+        choice = input.to_i
+        if choice.between?(1, filtered_items.length)
+          selected_item = filtered_items[choice - 1]
+          show_item_menu(selected_item)
+          break  # Return to main menu after showing item
+        else
+          puts "Invalid number. Please select a valid item number."
+        end
+      else
+        filter_text = input  # Update filter text
+      end
     end
   end
 
@@ -294,7 +326,7 @@ class CLI
     end
 
     puts "\n=== Find Item by Tag ==="
-    puts "Available Tags (type to filter, press number to select, 'back' to return):"
+    puts "Available Tags (type to filter, press number to select, 0 to go back):"
 
     filter_text = ""
     loop do
@@ -318,10 +350,10 @@ class CLI
         end
       end
 
-      print "\nType to filter or select (number/back): "
+      print "\nType to filter or select (number/0 to go back): "
       input = gets.chomp
 
-      if input.downcase == 'back'
+      if input == '0'
         break
       elsif input.empty?
         filter_text = ""  # Clear filter
@@ -367,10 +399,11 @@ class CLI
     end
 
     print "\nSelect item (number) or 0 to go back: "
-    choice = gets.chomp.to_i
+    input = gets.chomp
 
-    return if choice == 0
+    return if input == '0'
 
+    choice = input.to_i
     if choice.between?(1, items.length)
       selected_item = items[choice - 1]
       show_item_menu(selected_item)
@@ -468,25 +501,33 @@ class CLI
 
   def show_item_menu(item)
     loop do
-      puts "\n=== Item: #{item.name} ==="
-      puts "#{item.created_at} | #{item.name} | [#{item.tag_names.join(', ')}]"
+      puts "\n=== #{item.name} ==="
+      puts "Date: #{item.created_at}"
+      puts "Tags: [#{item.tag_names.map { |tag| "\"#{tag}\"" }.join(', ')}]"
+
+      if item.description && !item.description.strip.empty?
+        puts ""
+        item.description.each_line do |line|
+          puts "| #{line.rstrip}"
+        end
+      end
       puts "\n1. Open folder"
       puts "2. Edit"
       puts "9. Delete item"
       puts "0. Back to search results"
       print "Choose an option: "
 
-      choice = gets.chomp.to_i
+      input = gets.chomp
 
-      case choice
-      when 0
+      case input
+      when '0'
         break
-      when 1
+      when '1'
         item.open_folder
-      when 2
+      when '2'
         edit_item(item)
         break # Return to search after editing
-      when 9
+      when '9'
         if confirm_delete(item)
           item.destroy
           puts "Item deleted successfully."
@@ -517,18 +558,41 @@ class CLI
     update_desc = gets.chomp.downcase == 'y'
 
     if update_desc
-      puts "Enter new description (press Enter twice to finish):"
+      puts "\nCurrent description:"
+      if item.description && !item.description.strip.empty?
+        item.description.each_line do |line|
+          puts "| #{line.rstrip}"
+        end
+      else
+        puts "(no description)"
+      end
+
+      puts "\nEnter new description (press Enter twice to finish, or just Enter to keep current):"
       lines = []
       loop do
         line = gets.chomp
         break if line.empty? && !lines.empty?
         lines << line
       end
-      item.description = lines.join("\n")
+
+      new_description = lines.join("\n")
+      item.description = new_description unless new_description.strip.empty?
     end
 
     item.save
     puts "Item updated successfully!"
+
+    # Show the updated item
+    puts "\n=== #{item.name} ==="
+    puts "Date: #{item.created_at}"
+    puts "Tags: [#{item.tag_names.map { |tag| "\"#{tag}\"" }.join(', ')}]"
+
+    if item.description && !item.description.strip.empty?
+      puts ""
+      item.description.each_line do |line|
+        puts "| #{line.rstrip}"
+      end
+    end
   end
 
   def confirm_delete(item)

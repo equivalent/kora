@@ -45,7 +45,7 @@ The application provides a simple numbered menu interface:
 1. **Search Item** - Search for items by keyword (supports diacritic-insensitive search)
 2. **Find Item by Tag** - Browse and filter tags to find items by tag
 3. **Create New Item** - Add a new item with tags and description
-9. **Exit** - Quit the application
+0. **Exit** - Quit the application
 
 ### Creating Items
 - Enter item name
@@ -55,8 +55,11 @@ The application provides a simple numbered menu interface:
 - A storage folder is automatically created: `./storage/YYYY-MM-DD_sanitized-name/`
 
 ### Finding Items by Search
-- Enter search keyword
+- **Interactive filtering**: Shows 50 most recent items initially
+- **Type to filter**: Start typing to instantly filter items in real-time
 - **Diacritic-insensitive search**: Searching for "ziadost" will find "Žiadosť"
+- **Press Enter to clear**: Return to showing recent items
+- **Type 0 to go back**: Return to main menu
 - Results show: date | name | [tags]
 - Select item by number for operations:
   - Open folder in file manager
@@ -67,8 +70,9 @@ The application provides a simple numbered menu interface:
 - Browse all tags alphabetically
 - **Type to filter**: Start typing to narrow down the tag list
 - **Diacritic-insensitive filtering**: "med" finds "MEDOVKA"
+- **Type 0 to go back**: Return to main menu at any time
 - Select tag by number to see all items with that tag
-- From item list, select item by number for operations
+- From item list, select item by number for operations or 0 to go back
 
 ## File Storage
 
