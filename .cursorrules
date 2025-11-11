@@ -253,17 +253,25 @@ git clone <repository>
 cd kora
 bundle install
 
-# Run with executable
+# Run with executable (development mode - safe for testing)
 ./bin/kora
 
-# Or run directly
+# Or run directly (development mode)
 ruby main.rb
 ```
 
 ### First Run
-- Database auto-creates on first launch
-- Storage directory auto-creates
+- Production database: `storage/kora.sqlite3`
+- Development database: `tmp/development_storage.sqlite3`
+- Storage directories auto-create
 - No configuration required
+
+### Development Configuration
+- **Always Development Mode**: The application is configured to always use development database and storage
+- **Development Database**: `tmp/development_storage.sqlite3`
+- **Development Storage**: `tmp/development_storage/`
+- Safe for all testing and experimentation
+- Production data in `storage/` remains untouched
 
 ## Troubleshooting
 

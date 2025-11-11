@@ -57,6 +57,9 @@ The application provides a simple numbered menu interface:
 - A storage folder is automatically created: `./storage/YYYY-MM-DD_sanitized-name/`
 - **File Requirement**: The folder opens automatically, and you MUST add at least one file before the application allows you to continue
 
+### Development Setup
+This application is configured to always use development mode with separate database and storage in the `tmp/` directory for safe testing and development.
+
 ### Finding Items by Search
 - **Interactive filtering**: Shows 50 most recent items initially
 - **Type to filter**: Start typing to instantly filter items in real-time

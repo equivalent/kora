@@ -16,7 +16,9 @@ class String
 end
 
 # Database setup
-DB_PATH = 'kora.db'
+# Always use development database for Cursor development
+DB_PATH = 'tmp/development_storage.sqlite3'
+STORAGE_PATH = 'tmp/development_storage'
 
 class Database
   def self.connect
@@ -59,7 +61,7 @@ class Database
     SQL
 
     # Create storage directory
-    FileUtils.mkdir_p('storage')
+    FileUtils.mkdir_p(STORAGE_PATH)
   end
 end
 
@@ -180,7 +182,7 @@ class Item
     date_str = Date.parse(@created_at).strftime('%Y-%m-%d')
     folder_name = "#{date_str}_#{sanitized_name}"
 
-    @path = File.join('storage', folder_name)
+    @path = File.join(STORAGE_PATH, folder_name)
     FileUtils.mkdir_p(@path)
   end
 
@@ -216,6 +218,23 @@ class Tag
   def save
     Tag.find_or_create_by_name(@name)
   end
+
+  def update(new_name)
+    return if new_name.strip.empty?
+
+    db = Database.connect
+    db.execute("UPDATE tags SET name = ? WHERE id = ?", [new_name.upcase, @id])
+    @name = new_name.upcase
+  end
+
+  def destroy
+    return unless @id
+
+    db = Database.connect
+    # Note: taggings are automatically deleted due to CASCADE constraint
+    # Items are NOT deleted - only the tag associations are removed
+    db.execute("DELETE FROM tags WHERE id = ?", [@id])
+  end
 end
 
 class CLI
@@ -236,6 +255,8 @@ class CLI
         find_item_by_tag
       when 3
         create_item
+      when 4
+        edit_tags
       when 0
         @running = false
       else
@@ -251,6 +272,7 @@ class CLI
     puts "1. Search Item"
     puts "2. Find Item by Tag"
     puts "3. Create New Item"
+    puts "4. Edit tags"
     puts "0. Exit"
     print "Choose an option: "
   end
@@ -372,7 +394,95 @@ class CLI
     end
   end
 
+  def edit_tags
+    all_tags = Tag.all.sort_by { |tag| tag.name.normalize_diacritics.downcase }
+
+    if all_tags.empty?
+      puts "No tags found in the database."
+      return
+    end
+
+    puts "\n=== Edit Tags ==="
+    puts "Available Tags (type to filter, press number to select, 0 to go back):"
+
+    filter_text = ""
+    loop do
+      # Filter tags based on current filter_text
+      filtered_tags = if filter_text.empty?
+        all_tags
+      else
+        normalized_filter = filter_text.normalize_diacritics.downcase
+        all_tags.select do |tag|
+          tag.name.downcase.include?(filter_text.downcase) ||
+          tag.name.normalize_diacritics.downcase.include?(normalized_filter)
+        end
+      end
+
+      if filtered_tags.empty?
+        puts "\nNo tags match '#{filter_text}'. Keep typing or press Enter to clear filter."
+      else
+        puts "\nFiltered Tags#{filter_text.empty? ? '' : " (filter: '#{filter_text}')"}:"
+        filtered_tags.each_with_index do |tag, index|
+          puts "#{index + 1}. #{tag.name}"
+        end
+      end
+
+      print "\nType to filter or select (number/0 to go back): "
+      input = gets.chomp
+
+      if input == '0'
+        break
+      elsif input.empty?
+        filter_text = ""  # Clear filter
+      elsif input.match?(/^\d+$/)
+        choice = input.to_i
+        if choice.between?(1, filtered_tags.length)
+          selected_tag = filtered_tags[choice - 1]
+          show_tag_actions_menu(selected_tag)
+          break  # Return to main menu after tag actions
+        else
+          puts "Invalid number. Please select a valid tag number."
+        end
+      else
+        filter_text = input  # Update filter text
+      end
+    end
+  end
+
   def show_items_for_tag(tag)
+    display_items_for_tag(tag)
+
+    # Get items again for selection (could optimize this but keeping simple for now)
+    db = Database.connect
+    query = <<-SQL
+      SELECT i.*, GROUP_CONCAT(t.name) as tag_names
+      FROM items i
+      JOIN taggings tg ON i.id = tg.item_id
+      JOIN tags t ON tg.tag_id = t.id
+      WHERE tg.tag_id = ?
+      GROUP BY i.id
+      ORDER BY i.created_at DESC
+    SQL
+
+    items = db.execute(query, [tag.id]).map { |row| Item.new(row) }
+
+    return if items.empty?
+
+    print "\nSelect item (number) or 0 to go back: "
+    input = gets.chomp
+
+    return if input == '0'
+
+    choice = input.to_i
+    if choice.between?(1, items.length)
+      selected_item = items[choice - 1]
+      show_item_menu(selected_item)
+    else
+      puts "Invalid selection."
+    end
+  end
+
+  def display_items_for_tag(tag)
     # Find items that have this tag
     db = Database.connect
     query = <<-SQL
@@ -389,26 +499,65 @@ class CLI
 
     if items.empty?
       puts "\nNo items found with tag '#{tag.name}'"
-      return
-    end
-
-    puts "\nItems tagged with '#{tag.name}':"
-    items.each_with_index do |item, index|
-      tags_str = item.tag_names.any? ? " [#{item.tag_names.join(', ')}]" : ""
-      puts "#{index + 1}. #{item.created_at} | #{item.name}#{tags_str}"
-    end
-
-    print "\nSelect item (number) or 0 to go back: "
-    input = gets.chomp
-
-    return if input == '0'
-
-    choice = input.to_i
-    if choice.between?(1, items.length)
-      selected_item = items[choice - 1]
-      show_item_menu(selected_item)
     else
-      puts "Invalid selection."
+      puts "\nItems tagged with '#{tag.name}':"
+      items.each_with_index do |item, index|
+        tags_str = item.tag_names.any? ? " [#{item.tag_names.join(', ')}]" : ""
+        puts "#{index + 1}. #{item.created_at} | #{item.name}#{tags_str}"
+      end
+    end
+  end
+
+  def show_tag_actions_menu(tag)
+    # First display items that use this tag
+    display_items_for_tag(tag)
+
+    loop do
+      puts "\n=== Edit Tag: '#{tag.name}' ==="
+      puts "1. Edit tag name"
+      puts "5. Delete tag"
+      puts "0. Back to tag list"
+      print "Choose an option: "
+
+      input = gets.chomp
+
+      case input
+      when '0'
+        break
+      when '1'
+        print "New tag name: "
+        new_name = gets.chomp
+        if new_name.strip.empty?
+          puts "Tag name cannot be empty."
+        else
+          tag.update(new_name)
+          puts "Tag renamed to '#{tag.name}' successfully!"
+          # Stay in the menu to allow further actions
+        end
+      when '5'
+        # Check if tag has associated items
+        db = Database.connect
+        count = db.get_first_value("SELECT COUNT(*) FROM taggings WHERE tag_id = ?", [tag.id])
+
+        if count > 0
+          puts "⚠️  This tag is associated with #{count} item(s)."
+          print "Deleting this tag will remove it from all associated items. Continue? (y/n): "
+          if gets.chomp.downcase == 'y'
+            tag.destroy
+            puts "Tag '#{tag.name}' deleted successfully!"
+            break  # Return to tag list since tag no longer exists
+          end
+        else
+          print "Are you sure you want to delete tag '#{tag.name}'? (y/n): "
+          if gets.chomp.downcase == 'y'
+            tag.destroy
+            puts "Tag '#{tag.name}' deleted successfully!"
+            break  # Return to tag list since tag no longer exists
+          end
+        end
+      else
+        puts "Invalid option."
+      end
     end
   end
 
