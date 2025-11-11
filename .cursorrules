@@ -252,6 +252,11 @@ def create_folder
 git clone <repository>
 cd kora
 bundle install
+
+# Run with executable
+./bin/kora
+
+# Or run directly
 ruby main.rb
 ```
 

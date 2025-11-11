@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+
+# Kora - Personal File Archive
+# Command-line executable
+
+# Signal that we're running from the executable
+KORA_EXECUTABLE = true
+
+# Add the current directory to the load path so we can require main.rb
+$LOAD_PATH.unshift(File.dirname(__FILE__) + '/../')
+
+# Load and run the main application
+require 'main'

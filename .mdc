@@ -65,7 +65,7 @@ KORA - file archive
 - **Item Details**: Name, date (defaults to today), description
 - **Tag Selection**: Interactive tag picker with filtering
 - **Auto-Folder**: Automatic storage folder creation
-- **File Integration**: Opens folder for immediate file addition
+- **File Integration**: Opens folder and REQUIRES at least one file to be added before continuing
 
 ## Database Schema
 
@@ -252,6 +252,11 @@ def create_folder
 git clone <repository>
 cd kora
 bundle install
+
+# Run with executable
+./bin/kora
+
+# Or run directly
 ruby main.rb
 ```
 

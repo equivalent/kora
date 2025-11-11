@@ -2,7 +2,7 @@
 
 A command-line Ruby application for personal file organization with full-text search capabilities.
 
-PLEASE NOTE: this is a vibe coded experimental project
+PLEASE NOTE: this is a **vibe coded** experimental project. 
 
 ## Features
 
@@ -52,9 +52,10 @@ The application provides a simple numbered menu interface:
 ### Creating Items
 - Enter item name
 - Specify date (YYYY-MM-DD format, defaults to today)
-- Select/add tags (press 0 to create new tags)
+- Select/add tags (type 'new' to create new tags, 0 to finish)
 - Optionally add a multiline description
 - A storage folder is automatically created: `./storage/YYYY-MM-DD_sanitized-name/`
+- **File Requirement**: The folder opens automatically, and you MUST add at least one file before the application allows you to continue
 
 ### Finding Items by Search
 - **Interactive filtering**: Shows 50 most recent items initially

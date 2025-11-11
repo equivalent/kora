@@ -450,6 +450,25 @@ class CLI
 
     puts "Item created successfully!"
     item.open_folder
+
+    # Wait for at least one file to be added to the folder
+    puts "\n⚠️  IMPORTANT: Please add at least one file to the opened folder '#{File.basename(item.path)}'."
+    puts "You cannot continue until at least one file has been added to the folder."
+
+    loop do
+      # Check for actual files (exclude directories and system files)
+      files_in_folder = Dir.glob(File.join(item.path, '*')).select do |f|
+        File.file?(f) && !File.basename(f).start_with?('.')
+      end
+
+      if files_in_folder.any?
+        puts "\n✅ Found #{files_in_folder.size} file(s) in the folder. Item creation complete!"
+        break
+      else
+        print "\n⏳ Still waiting for files... Press Enter to check again: "
+        gets.chomp
+      end
+    end
   end
 
   def select_tags
@@ -458,20 +477,20 @@ class CLI
 
     loop do
       puts "\nAvailable Tags:"
-      puts "0. Add new tag"
+      puts "0. Finish"
 
       tags.each_with_index do |tag, index|
         puts "#{index + 1}. #{tag.name}"
       end
 
       puts "\nSelected: #{selected_ids.map { |id| tags.find { |t| t.id == id }&.name }.compact.join(', ')}"
-      print "Choose tag (0 to add new, number to select, 'done' to finish): "
+      print "Choose tag (0 to finish, number to select, 'new' to add tag): "
 
       input = gets.chomp
 
-      if input.downcase == 'done'
+      if input == '0'
         break
-      elsif input == '0'
+      elsif input.downcase == 'new'
         print "New tag name: "
         tag_name = gets.chomp
         if tag_name.strip.empty?
@@ -526,7 +545,6 @@ class CLI
         item.open_folder
       when '2'
         edit_item(item)
-        break # Return to search after editing
       when '9'
         if confirm_delete(item)
           item.destroy
@@ -602,6 +620,6 @@ class CLI
 end
 
 # Run the application
-if __FILE__ == $0
+if __FILE__ == $0 || defined?(KORA_EXECUTABLE)
   CLI.new.run
 end
