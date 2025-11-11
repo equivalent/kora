@@ -58,7 +58,14 @@ The application provides a simple numbered menu interface:
 - **File Requirement**: The folder opens automatically, and you MUST add at least one file before the application allows you to continue
 
 ### Development Setup
-This application is configured to always use development mode with separate database and storage in the `tmp/` directory for safe testing and development.
+This application defaults to development mode with separate database and storage in the `tmp/` directory for safe testing and development.
+
+### Production Access
+To access your real production data:
+```bash
+KORA=prod ./bin/kora        # Via executable
+KORA=prod ruby main.rb       # Via direct Ruby
+```
 
 ### Finding Items by Search
 - **Interactive filtering**: Shows 50 most recent items initially

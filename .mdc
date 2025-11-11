@@ -258,6 +258,10 @@ bundle install
 
 # Or run directly (development mode)
 ruby main.rb
+
+# Access production data
+KORA=prod ./bin/kora        # Via executable
+KORA=prod ruby main.rb       # Via direct Ruby
 ```
 
 ### First Run
@@ -266,12 +270,12 @@ ruby main.rb
 - Storage directories auto-create
 - No configuration required
 
-### Development Configuration
-- **Always Development Mode**: The application is configured to always use development database and storage
+### Environment Configuration
+- **Default Development Mode**: The application defaults to development database and storage for safe testing
 - **Development Database**: `tmp/development_storage.sqlite3`
 - **Development Storage**: `tmp/development_storage/`
-- Safe for all testing and experimentation
-- Production data in `storage/` remains untouched
+- **Production Access**: Set `KORA=prod` or use `bin/kora` to access production data
+- Production data in `storage/` remains protected
 
 ## Troubleshooting
 

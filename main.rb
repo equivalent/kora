@@ -16,9 +16,14 @@ class String
 end
 
 # Database setup
-# Always use development database for Cursor development
-DB_PATH = 'tmp/development_storage.sqlite3'
-STORAGE_PATH = 'tmp/development_storage'
+# Default to development mode, but use production when KORA=prod or when run via bin/kora
+if ENV['KORA'] == 'prod' || defined?(KORA_EXECUTABLE)
+  DB_PATH = 'storage/kora.sqlite3'
+  STORAGE_PATH = 'storage'
+else
+  DB_PATH = 'tmp/development_storage.sqlite3'
+  STORAGE_PATH = 'tmp/development_storage'
+end
 
 class Database
   def self.connect
