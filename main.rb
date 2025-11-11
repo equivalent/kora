@@ -262,6 +262,8 @@ class CLI
         create_item
       when 4
         edit_tags
+      when 8
+        create_backup
       when 0
         @running = false
       else
@@ -278,6 +280,7 @@ class CLI
     puts "2. Find Item by Tag"
     puts "3. Create New Item"
     puts "4. Edit tags"
+    puts "8. Create Backup"
     puts "0. Exit"
     print "Choose an option: "
   end
@@ -770,6 +773,25 @@ class CLI
   def confirm_delete(item)
     print "Are you sure you want to delete '#{item.name}'? (y/n): "
     gets.chomp.downcase == 'y'
+  end
+
+  def create_backup
+    puts "\n=== Create Backup ==="
+    backup_path = "/tmp/2025-11-11__kora_production_backup.tar.gz"
+
+    puts "Creating backup of storage folder..."
+    puts "Source: #{STORAGE_PATH}"
+    puts "Destination: #{backup_path}"
+
+    # Use tar to create compressed archive
+    result = system("tar -czf #{backup_path} -C #{File.dirname(STORAGE_PATH)} #{File.basename(STORAGE_PATH)}")
+
+    if result
+      puts "✅ Backup created successfully!"
+      puts "Backup saved to: #{backup_path}"
+    else
+      puts "❌ Failed to create backup. Please check permissions and try again."
+    end
   end
 end
 
